@@ -81,3 +81,39 @@ function persoon_save_custom_fields($post_id) {
     }
 }
 add_action('save_post', 'persoon_save_custom_fields');
+
+function persoon_instellingen_shortcode() {
+    if (!current_user_can('manage_options')) {
+        return 'Je hebt geen toestemming om deze pagina te bekijken.';
+    }
+
+    // Verwerken van form submission
+    if (isset($_POST['persoon_instellingen_submitted'])) {
+        check_admin_referer('persoon_instellingen_opslaan');
+
+        $opties = array(
+            'posts_per_page' => intval($_POST['persoon_instellingen']['posts_per_page']),
+            'display_images' => isset($_POST['persoon_instellingen']['display_images']) ? 1 : 0,
+        );
+        update_option('persoon_instellingen', $opties);
+        $bericht = '<div class="updated"><p>Instellingen opgeslagen.</p></div>';
+    }
+
+    $opties = get_option('persoon_instellingen', array('posts_per_page' => 9, 'display_images' => 1));
+
+    ob_start();
+    if (isset($bericht)) echo $bericht;
+    ?>
+    <form method="post" action="">
+        <?php wp_nonce_field('persoon_instellingen_opslaan'); ?>
+        <p><label for="posts_per_page">Aantal posts per pagina:</label>
+            <input type="number" id="posts_per_page" name="persoon_instellingen[posts_per_page]" value="<?php echo esc_attr($opties['posts_per_page']); ?>"></p>
+        <p><label for="display_images">Afbeeldingen weergeven:</label>
+            <input type="checkbox" id="display_images" name="persoon_instellingen[display_images]" <?php checked($opties['display_images'], 1); ?>></p>
+        <input type="hidden" name="persoon_instellingen_submitted" value="1">
+        <p><input type="submit" value="Opslaan"></p>
+    </form>
+    <?php
+    return ob_get_clean();
+}
+add_shortcode('persoon_instellingen', 'persoon_instellingen_shortcode');
