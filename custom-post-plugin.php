@@ -82,6 +82,53 @@ function persoon_save_custom_fields($post_id) {
 }
 add_action('save_post', 'persoon_save_custom_fields');
 
+function toon_persoon_posts_shortcode() {
+    // Ophalen van de instellingen
+    $opties = get_option('persoon_instellingen', array('posts_per_page' => 9, 'display_images' => true));
+    $posts_per_page = $opties['posts_per_page'] ?? 9; // PHP 7.0+ null coalescing operator
+    $display_images = $opties['display_images'] ?? true;
+
+    // WP_Query argumenten opstellen
+    $args = array(
+        'post_type' => 'persoon',
+        'posts_per_page' => $posts_per_page,
+    );
+
+    $query = new WP_Query($args);
+    ob_start();
+
+    if ($query->have_posts()) {
+        echo '<div class="persoon-container">';
+        while ($query->have_posts()) {
+            $query->the_post();
+
+            echo '<div class="persoon-blok" style="display: flex;">';
+
+            echo '<div class="persoon-info">';
+            // Details weergeven
+            echo '<h2>' . get_the_title() . '</h2>';
+            echo '<p>Adres: ' . esc_html(get_post_meta(get_the_ID(), '_persoon_adres', true)) . '</p>';
+            echo '<p>Postcode: ' . esc_html(get_post_meta(get_the_ID(), '_persoon_postcode', true)) . '</p>';
+            echo '<p>Email: ' . esc_html(get_post_meta(get_the_ID(), '_persoon_email', true)) . '</p>';
+            the_excerpt();
+            echo '</div>';
+
+            // Afbeeldingen weergeven indien ingesteld
+            if ($display_images && has_post_thumbnail()) {
+                echo '<div class="persoon-afbeelding" style="margin-left: 20px;">';
+                the_post_thumbnail('medium');
+                echo '</div>';
+            }
+
+            echo '</div>'; // Sluit persoon-blok
+        }
+        echo '</div>'; // Sluit persoon-container
+    }
+
+    wp_reset_postdata();
+    return ob_get_clean();
+}
+add_shortcode('toon_persoon_posts', 'toon_persoon_posts_shortcode');
 function persoon_instellingen_shortcode() {
     if (!current_user_can('manage_options')) {
         return 'Je hebt geen toestemming om deze pagina te bekijken.';
